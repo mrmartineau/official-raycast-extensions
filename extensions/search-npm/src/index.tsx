@@ -23,7 +23,7 @@ export default function PackageList() {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [history, setHistory] = useCachedState<HistoryItem[]>('history', [])
   const [favorites, fetchFavorites] = useFavorites()
-  const { showLinkToSearchResultsInListView }: Preferences =
+  const { historyCount, showLinkToSearchResultsInListView }: Preferences =
     getPreferenceValues()
 
   const { isLoading, data, revalidate } = useFetch<NpmFetchResponse>(
@@ -114,40 +114,43 @@ export default function PackageList() {
         </>
       ) : (
         <>
-          {history.length ? (
-            <List.Section title="History">
-              {history.map((item) => {
-                if (item.type === 'package' && item?.package?.name) {
-                  const pkgName = item.package.name
+          {Number(historyCount) > 0 ? (
+            history.length ? (
+              <List.Section title="History">
+                {history.map((item) => {
+                  if (item.type === 'package' && item?.package?.name) {
+                    const pkgName = item.package.name
+                    return (
+                      <PackageListItem
+                        key={`history-${pkgName}`}
+                        result={item.package}
+                        searchTerm={searchTerm}
+                        setHistory={setHistory}
+                        isFavorited={
+                          favorites.findIndex(
+                            (fave) => fave.name === pkgName,
+                          ) !== -1
+                        }
+                        handleFaveChange={fetchFavorites}
+                        isHistoryItem={true}
+                      />
+                    )
+                  }
+
                   return (
-                    <PackageListItem
-                      key={`history-${pkgName}`}
-                      result={item.package}
-                      searchTerm={searchTerm}
+                    <HistoryListItem
+                      key={`history-${item.term}-${item.type}`}
+                      item={item}
                       setHistory={setHistory}
-                      isFavorited={
-                        favorites.findIndex((fave) => fave.name === pkgName) !==
-                        -1
-                      }
-                      handleFaveChange={fetchFavorites}
-                      isHistoryItem={true}
+                      setSearchTerm={setSearchTerm}
                     />
                   )
-                }
-
-                return (
-                  <HistoryListItem
-                    key={`history-${item.term}-${item.type}`}
-                    item={item}
-                    setHistory={setHistory}
-                    setSearchTerm={setSearchTerm}
-                  />
-                )
-              })}
-            </List.Section>
-          ) : (
-            <List.EmptyView title="Type something to get started" />
-          )}
+                })}
+              </List.Section>
+            ) : (
+              <List.EmptyView title="Type something to get started" />
+            )
+          ) : null}
         </>
       )}
     </List>
